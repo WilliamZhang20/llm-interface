@@ -67,3 +67,30 @@ export async function selectProvider(
 
   return null
 }
+
+/**
+ * Returns the full ordered list of providers to attempt, for transparent
+ * failover. The `preferred` provider (if the user has a key for it) comes
+ * first, followed by the rest in priority order. Circuit-broken providers are
+ * dropped — unless that would leave nothing, in which case we try them anyway.
+ */
+export function orderProviders(
+  userProviders: UserProvider[],
+  preferred?: ProviderID
+): SelectedProvider[] {
+  const sorted = [...userProviders].sort((a, b) => a.priority - b.priority)
+  const ordered: UserProvider[] = []
+
+  if (preferred) {
+    const pref = sorted.find((u) => u.provider === preferred)
+    if (pref) ordered.push(pref)
+  }
+  for (const u of sorted) {
+    if (!ordered.some((o) => o.provider === u.provider)) ordered.push(u)
+  }
+
+  const open = ordered.filter((u) => !isCircuitOpen(u.provider))
+  const finalList = open.length > 0 ? open : ordered
+
+  return finalList.map((u) => ({ provider: getProvider(u.provider), key: u.key }))
+}

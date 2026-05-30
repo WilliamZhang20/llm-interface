@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase'
 import { decrypt } from '@/lib/crypto'
 import { toNormalized, type DBMessage } from '@/lib/context/adapter'
 import { maybeCompress } from '@/lib/context/compressor'
-import { selectProvider, markUnavailable, type UserProvider } from '@/lib/router'
+import { orderProviders, markUnavailable, type UserProvider } from '@/lib/router'
 import { type ProviderID } from '@/lib/providers/index'
 
 export async function POST(request: Request) {
@@ -72,18 +72,22 @@ export async function POST(request: Request) {
     userMsg,
   ]
 
-  // Select provider (may fail if all unavailable)
-  const selected = await selectProvider(userProviders, preferredProvider)
-  if (!selected) {
-    return NextResponse.json({ error: 'No available providers. Check your API keys or try again later.' }, { status: 503 })
+  // Build the ordered list of providers to try (preferred first, then the
+  // rest by priority). Failover walks this list transparently.
+  const candidates = orderProviders(userProviders, preferredProvider)
+  if (candidates.length === 0) {
+    return NextResponse.json(
+      { error: 'No available providers. Add an API key in Settings.' },
+      { status: 503 }
+    )
   }
 
-  // Compress if context is too large
+  // Compress against the first candidate's context window
   const { messages: compressed } = await maybeCompress(
     normalized,
-    selected.provider.contextLimit,
+    candidates[0].provider.contextLimit,
     userProviders,
-    selected.provider.estimateTokens.bind(selected.provider)
+    candidates[0].provider.estimateTokens.bind(candidates[0].provider)
   )
   normalized = compressed
 
@@ -97,9 +101,9 @@ export async function POST(request: Request) {
       .eq('user_id', user.id)
   }
 
-  const modelUsed = `${selected.provider.id}/${selected.provider.defaultModel}`
   const assistantSeq = nextSeq + 1
   let fullResponse = ''
+  let usedModel = ''
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -107,45 +111,47 @@ export async function POST(request: Request) {
       const send = (data: object) =>
         controller.enqueue(enc.encode(`data: ${JSON.stringify(data)}\n\n`))
 
-      send({ model: modelUsed })
+      for (let i = 0; i < candidates.length; i++) {
+        const { provider, key } = candidates[i]
+        const modelLabel = `${provider.id}/${provider.defaultModel}`
+        let producedHere = false
 
-      try {
-        for await (const chunk of selected.provider.stream(normalized, selected.key)) {
-          fullResponse += chunk
-          send({ content: chunk })
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Stream error'
-        markUnavailable(selected.provider.id)
-
-        // Try fallback provider
-        const fallback = await selectProvider(
-          userProviders.filter((p) => p.provider !== selected.provider.id),
-          undefined
-        )
-
-        if (fallback) {
-          send({ model: `${fallback.provider.id}/${fallback.provider.defaultModel}` })
-          try {
-            for await (const chunk of fallback.provider.stream(normalized, fallback.key)) {
-              fullResponse += chunk
-              send({ content: chunk })
-            }
-          } catch (fallbackErr) {
-            send({ error: fallbackErr instanceof Error ? fallbackErr.message : 'Fallback failed' })
+        try {
+          send({ model: modelLabel })
+          for await (const chunk of provider.stream(normalized, key)) {
+            producedHere = true
+            fullResponse += chunk
+            send({ content: chunk })
           }
-        } else {
-          send({ error: msg })
+          usedModel = modelLabel
+          break // success
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Stream error'
+          markUnavailable(provider.id)
+
+          if (producedHere) {
+            // Tokens already streamed — keep them, don't restart elsewhere
+            send({ error: `${provider.name} failed mid-response: ${msg}` })
+            usedModel = modelLabel
+            break
+          }
+
+          const next = candidates[i + 1]
+          if (next) {
+            send({ notice: `${provider.name} unavailable (${msg}). Falling back to ${next.provider.name}…` })
+          } else {
+            send({ error: `${provider.name} failed: ${msg}. No more providers to try.` })
+          }
         }
       }
 
-      // Save assistant message
+      // Save assistant message (if we got anything)
       if (fullResponse) {
         await supabase.from('messages').insert({
           conversation_id: conversationId,
           role: 'assistant',
           content: fullResponse,
-          model_used: modelUsed,
+          model_used: usedModel,
           sequence_num: assistantSeq,
         })
         await supabase

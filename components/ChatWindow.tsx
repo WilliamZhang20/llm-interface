@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 import MessageBubble from './MessageBubble'
 import ModelPicker from './ModelPicker'
@@ -20,15 +19,15 @@ interface Props {
 }
 
 export default function ChatWindow({ conversationId }: Props) {
-  const router = useRouter()
   const isNew = conversationId === 'new'
-  const [realId, setRealId] = useState(() => (isNew ? uuidv4() : conversationId))
+  const [realId] = useState(() => (isNew ? uuidv4() : conversationId))
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [model, setModel] = useState<ProviderID | 'auto'>('auto')
   const [availableProviders, setAvailableProviders] = useState<ProviderID[]>([])
   const [error, setError] = useState('')
+  const [notices, setNotices] = useState<string[]>([])
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const firstMessageSent = useRef(false)
@@ -79,6 +78,7 @@ export default function ChatWindow({ conversationId }: Props) {
 
     setInput('')
     setError('')
+    setNotices([])
     setLoading(true)
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
 
@@ -113,10 +113,12 @@ export default function ChatWindow({ conversationId }: Props) {
         return
       }
 
-      // Navigate to real URL on first message
+      // Update the URL on first message WITHOUT a Next.js navigation.
+      // router.replace() would remount this component and re-run the
+      // message-loading effect, clobbering the in-flight streamed reply.
       if (isNew && !firstMessageSent.current) {
         firstMessageSent.current = true
-        router.replace(`/chat/${realId}`)
+        window.history.replaceState(null, '', `/chat/${realId}`)
       }
 
       const reader = res.body!.getReader()
@@ -152,14 +154,20 @@ export default function ChatWindow({ conversationId }: Props) {
                 )
               )
             }
+            if (event.notice) {
+              setNotices((prev) => [...prev, event.notice])
+            }
             if (event.error) {
               setError(event.error)
             }
             if (event.done) {
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, streaming: false } : m
-                )
+                prev
+                  // Drop the assistant bubble if nothing was ever streamed
+                  .filter((m) => !(m.id === assistantId && !m.content))
+                  .map((m) =>
+                    m.id === assistantId ? { ...m, streaming: false } : m
+                  )
               )
             }
           } catch {}
@@ -200,6 +208,11 @@ export default function ChatWindow({ conversationId }: Props) {
               modelUsed={m.modelUsed}
               streaming={m.streaming}
             />
+          ))}
+          {notices.map((n, i) => (
+            <p key={i} className="text-xs text-amber-600 dark:text-amber-400 text-center">
+              ⚠ {n}
+            </p>
           ))}
           {error && (
             <p className="text-xs text-red-500 text-center">{error}</p>
