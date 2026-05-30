@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 import MessageBubble from './MessageBubble'
 import ModelPicker from './ModelPicker'
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export default function ChatWindow({ conversationId }: Props) {
+  const router = useRouter()
   const isNew = conversationId === 'new'
   const [realId] = useState(() => (isNew ? uuidv4() : conversationId))
   const [messages, setMessages] = useState<Message[]>([])
@@ -30,7 +32,14 @@ export default function ChatWindow({ conversationId }: Props) {
   const [notices, setNotices] = useState<string[]>([])
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const firstMessageSent = useRef(false)
+
+  // A fresh "/chat/new" gets a real UUID in the URL right away. This is a true
+  // navigation (the page is keyed by route id), so the component remounts into
+  // a clean blank state — and every "+ New" click does too. No messages exist
+  // yet, so there's nothing to clobber.
+  useEffect(() => {
+    if (isNew) router.replace(`/chat/${realId}`)
+  }, [isNew, realId, router])
 
   // Load available providers from settings
   useEffect(() => {
@@ -111,14 +120,6 @@ export default function ChatWindow({ conversationId }: Props) {
         setMessages((prev) => prev.filter((m) => m.id !== assistantId))
         setLoading(false)
         return
-      }
-
-      // Update the URL on first message WITHOUT a Next.js navigation.
-      // router.replace() would remount this component and re-run the
-      // message-loading effect, clobbering the in-flight streamed reply.
-      if (isNew && !firstMessageSent.current) {
-        firstMessageSent.current = true
-        window.history.replaceState(null, '', `/chat/${realId}`)
       }
 
       const reader = res.body!.getReader()

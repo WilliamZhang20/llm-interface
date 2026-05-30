@@ -6,5 +6,5 @@ interface Props {
 
 export default async function ChatPage({ params }: Props) {
   const { id } = await params
-  return <ChatWindow conversationId={id} />
+  return <ChatWindow key={id} conversationId={id} />
 }
