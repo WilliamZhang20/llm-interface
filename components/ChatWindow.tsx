@@ -44,7 +44,7 @@ export default function ChatWindow({ conversationId }: Props) {
   // Load existing messages for non-new conversations
   useEffect(() => {
     if (isNew) return
-    fetch(`/api/conversations/${conversationId}/messages`)
+    fetch(`/api/conversations/${conversationId}`)
       .then((r) => r.json())
       .then((data: { role: string; content: string; model_used: string | null }[]) => {
         setMessages(
