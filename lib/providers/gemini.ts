@@ -4,7 +4,7 @@ import { type LLMProvider, type NormalizedMessage, roughTokens } from './index'
 export const geminiProvider: LLMProvider = {
   id: 'gemini',
   name: 'Google',
-  defaultModel: 'gemini-2.0-flash',
+  defaultModel: 'gemini-2.5-flash',
   contextLimit: 1_000_000,
 
   async *stream(messages: NormalizedMessage[], apiKey: string) {
@@ -42,7 +42,7 @@ export const geminiProvider: LLMProvider = {
   async ping(apiKey: string) {
     try {
       const genAI = new GoogleGenerativeAI(apiKey)
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
       await model.countTokens('ping')
       return true
     } catch {
