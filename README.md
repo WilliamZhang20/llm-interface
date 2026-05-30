@@ -2,70 +2,27 @@
 
 **One chat. Every model. Your keys.**
 
-Most people are locked into a single AI provider's app. LLM Interface is a unified chat where you bring your own API keys — OpenAI, Anthropic, Google Gemini, xAI Grok — and talk to all of them through one interface. It always picks the best available model and, when a provider goes down, automatically fails over to the next one without losing your conversation.
+Most people are locked into a single AI provider's app. LLM Interface is a unified chat where you bring your own API keys — OpenAI, Anthropic, Google Gemini, xAI Grok, plus the free-tier speed demons Groq and Cerebras — and talk to all of them through one interface. It always picks the best available model and, when a provider goes down, automatically fails over to the next one without losing your conversation.
 
 The hard part it solves: **context portability.** When the active model changes mid-conversation, your history is reformatted for the new provider, and intelligently compressed if it overflows that model's context window — so the conversation stays coherent no matter who's answering.
 
+## Why LLM Interface
+
+- **Never get rate-limited again.** Hit OpenAI's 429? Your message silently re-routes to Claude, Gemini, or a free provider — same conversation, no copy-paste, no restart.
+- **One conversation, many brains.** Start a thread on Gemini, hand it to GPT-4o for reasoning, finish on a free model — the full history travels with you, reshaped for whoever's answering.
+- **Your keys, your data, no middleman markup.** Unlike proxy services, calls go straight from your server to each provider with your own keys. Nothing is resold, and keys are encrypted at rest (AES-256-GCM).
+- **Free to run, free to chat.** Add a Groq or Cerebras key and you have a genuinely free, blazing-fast assistant — no credit card, no provider lock-in.
+
 ## Features
 
-- 🔌 **Bring your own keys** — OpenAI, Anthropic, Gemini, and Grok, encrypted at rest (AES-256-GCM)
-- 🔀 **Automatic failover** — providers are tried in your priority order; a 429 or outage falls through to the next
-- 🧠 **Context compression** — rolling summaries kick in when a conversation outgrows the model's window
-- 🏷️ **Model transparency** — every reply shows which model produced it
-- 🔐 **Auth + per-user storage** — email/password login via Supabase, with row-level security
-
-## Tech Stack
-
-- **Next.js 16** (App Router) — UI and API routes in one repo
-- **Supabase** — authentication + Postgres
-- **Vercel** — hosting
-
-## Getting Started
-
-### 1. Clone and install
-
-```bash
-git clone <your-repo-url>
-cd llm-interface
-npm install
-```
-
-### 2. Set up Supabase
-
-1. Create a free project at [supabase.com](https://supabase.com)
-2. In the dashboard, open the **SQL Editor**, paste the contents of [`supabase/schema.sql`](supabase/schema.sql), and run it
-3. Grab your keys from **Settings → API**
-
-### 3. Configure environment variables
-
-```bash
-cp .env.local.example .env.local
-```
-
-Fill in `.env.local`:
-
-| Variable | Where to find it |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Settings → API → Project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Settings → API → default/anon key |
-| `SUPABASE_SERVICE_KEY` | Supabase → Settings → API → secret/service_role key |
-| `ENCRYPTION_SECRET` | Run `openssl rand -hex 32` and paste the output |
-
-### 4. Run it
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000), sign up, confirm your email, then add at least one provider key in **Settings** and start chatting.
-
-## Deploy to Vercel
-
-1. Push this repo to GitHub
-2. Import it at [vercel.com](https://vercel.com) → **Add New → Project**
-3. Add the same four environment variables under **Settings → Environment Variables**
-4. Deploy
-5. In Supabase → **Authentication → URL Configuration**, set your Vercel URL as the **Site URL**
+- 🔌 **Six providers, your keys** — OpenAI, Anthropic, Gemini, Grok, Groq, and Cerebras, encrypted at rest (AES-256-GCM)
+- 🆓 **Free options built in** — Groq and Cerebras run on free tiers with sub-second responses
+- 🔀 **Transparent failover** — providers are tried in your priority order; a 429 or outage rotates to the next, with a quiet "falling back to…" note
+- 🧠 **Context portability + compression** — history is reformatted per provider, and rolling summaries kick in when a conversation outgrows the model's window
+- 🎯 **Pick a model or let it choose** — pin a specific provider per chat, or leave it on Auto for availability-first routing
+- ✍️ **Rich markdown chat** — code blocks, tables, and lists render properly, streamed token-by-token
+- 🏷️ **Model transparency** — every reply shows which model actually produced it
+- 🔐 **Auth + per-user storage** — email/password or Google sign-in via Supabase, with row-level security
 
 ## How It Works
 
