@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase'
 import { encrypt, decrypt } from '@/lib/crypto'
 import { type ProviderID } from '@/lib/providers/index'
 
-const VALID_PROVIDERS: ProviderID[] = ['openai', 'anthropic', 'gemini', 'grok']
+const VALID_PROVIDERS: ProviderID[] = ['openai', 'anthropic', 'gemini', 'grok', 'groq', 'cerebras']
 
 export async function GET() {
   const supabase = await createClient()

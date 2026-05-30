@@ -1,4 +1,4 @@
-export type ProviderID = 'openai' | 'anthropic' | 'gemini' | 'grok'
+export type ProviderID = 'openai' | 'anthropic' | 'gemini' | 'grok' | 'groq' | 'cerebras'
 
 export interface NormalizedMessage {
   role: 'user' | 'assistant' | 'summary'

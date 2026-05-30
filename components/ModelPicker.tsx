@@ -12,6 +12,8 @@ const LABELS: Record<ProviderID | 'auto', string> = {
   anthropic: 'Claude',
   gemini: 'Gemini',
   grok: 'Grok',
+  groq: 'Groq',
+  cerebras: 'Cerebras',
 }
 
 export default function ModelPicker({ value, onChange, availableProviders }: Props) {

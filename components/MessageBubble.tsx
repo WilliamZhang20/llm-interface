@@ -10,6 +10,8 @@ const PROVIDER_COLORS: Record<string, string> = {
   anthropic: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
   gemini: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   grok: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  groq: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
+  cerebras: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
 }
 
 export default function MessageBubble({ role, content, modelUsed, streaming }: Props) {

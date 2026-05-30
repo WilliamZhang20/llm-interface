@@ -2,6 +2,8 @@ import { openaiProvider } from './providers/openai'
 import { anthropicProvider } from './providers/anthropic'
 import { geminiProvider } from './providers/gemini'
 import { grokProvider } from './providers/grok'
+import { groqProvider } from './providers/groq'
+import { cerebrasProvider } from './providers/cerebras'
 import { type LLMProvider, type ProviderID } from './providers/index'
 
 const PROVIDERS: Record<ProviderID, LLMProvider> = {
@@ -9,6 +11,8 @@ const PROVIDERS: Record<ProviderID, LLMProvider> = {
   anthropic: anthropicProvider,
   gemini: geminiProvider,
   grok: grokProvider,
+  groq: groqProvider,
+  cerebras: cerebrasProvider,
 }
 
 export function getProvider(id: ProviderID): LLMProvider {

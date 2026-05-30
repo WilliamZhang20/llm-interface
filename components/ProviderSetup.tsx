@@ -8,6 +8,8 @@ const PROVIDERS: { id: ProviderID; label: string; placeholder: string }[] = [
   { id: 'anthropic', label: 'Anthropic', placeholder: 'sk-ant-…' },
   { id: 'gemini', label: 'Google Gemini', placeholder: 'AIza…' },
   { id: 'grok', label: 'xAI Grok', placeholder: 'xai-…' },
+  { id: 'groq', label: 'Groq (free)', placeholder: 'gsk_…' },
+  { id: 'cerebras', label: 'Cerebras (free)', placeholder: 'csk-…' },
 ]
 
 interface StoredKey {
@@ -19,11 +21,11 @@ interface StoredKey {
 export default function ProviderSetup() {
   const [stored, setStored] = useState<StoredKey[]>([])
   const [inputs, setInputs] = useState<Record<ProviderID, string>>({
-    openai: '', anthropic: '', gemini: '', grok: '',
+    openai: '', anthropic: '', gemini: '', grok: '', groq: '', cerebras: '',
   })
   const [saving, setSaving] = useState<ProviderID | null>(null)
   const [status, setStatus] = useState<Record<ProviderID, string>>({
-    openai: '', anthropic: '', gemini: '', grok: '',
+    openai: '', anthropic: '', gemini: '', grok: '', groq: '', cerebras: '',
   })
 
   useEffect(() => {

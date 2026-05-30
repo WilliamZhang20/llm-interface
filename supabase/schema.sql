@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS provider_keys (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  provider    TEXT NOT NULL CHECK (provider IN ('openai', 'anthropic', 'gemini', 'grok')),
+  provider    TEXT NOT NULL CHECK (provider IN ('openai', 'anthropic', 'gemini', 'grok', 'groq', 'cerebras')),
   enc_key     TEXT NOT NULL,
   priority    INT NOT NULL DEFAULT 0,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
