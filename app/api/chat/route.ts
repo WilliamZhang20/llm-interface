@@ -17,14 +17,23 @@ export async function POST(request: Request) {
   }
 
   // Load user's provider keys
-  const { data: keyRows } = await supabase
+  const { data: keyRows, error: keyErr } = await supabase
     .from('provider_keys')
     .select('provider, enc_key, priority')
     .eq('user_id', user.id)
     .order('priority')
 
+  if (keyErr) {
+    return NextResponse.json(
+      { error: `Could not load provider keys: ${keyErr.message}` },
+      { status: 500 }
+    )
+  }
   if (!keyRows?.length) {
-    return NextResponse.json({ error: 'No provider keys configured. Go to Settings to add one.' }, { status: 400 })
+    return NextResponse.json(
+      { error: `No provider keys found for this account (user ${user.id.slice(0, 8)}…). Make sure you saved them while logged in as the same user.` },
+      { status: 400 }
+    )
   }
 
   const userProviders: UserProvider[] = keyRows.map((r) => ({

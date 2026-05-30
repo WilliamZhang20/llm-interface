@@ -45,7 +45,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid key' }, { status: 400 })
   }
 
-  const enc_key = encrypt(key.trim())
+  let enc_key: string
+  try {
+    enc_key = encrypt(key.trim())
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Encryption failed'
+    return NextResponse.json(
+      { error: `Server misconfigured: ${msg}. Check the ENCRYPTION_SECRET env var.` },
+      { status: 500 }
+    )
+  }
 
   const { error } = await supabase.from('provider_keys').upsert(
     { user_id: user.id, provider, enc_key, priority },

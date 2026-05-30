@@ -34,26 +34,42 @@ export default function ProviderSetup() {
     return stored.find((s) => s.provider === id)
   }
 
+  function safeParse(text: string): { error?: string } {
+    try {
+      return JSON.parse(text)
+    } catch {
+      return {}
+    }
+  }
+
   async function saveKey(id: ProviderID) {
     const key = inputs[id].trim()
     if (!key) return
     setSaving(id)
-    const res = await fetch('/api/providers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider: id, key, priority: PROVIDERS.findIndex((p) => p.id === id) }),
-    })
-    const json = await res.json()
-    setSaving(null)
-    if (res.ok) {
-      setStatus((s) => ({ ...s, [id]: 'Saved!' }))
-      setInputs((i) => ({ ...i, [id]: '' }))
-      const updated = await fetch('/api/providers').then((r) => r.json())
-      setStored(updated)
-    } else {
-      setStatus((s) => ({ ...s, [id]: json.error || 'Error' }))
+    try {
+      const res = await fetch('/api/providers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: id, key, priority: PROVIDERS.findIndex((p) => p.id === id) }),
+      })
+      // Response may not be JSON (e.g. a 500 error page) — read text and parse defensively
+      const text = await res.text()
+      const json = text ? safeParse(text) : {}
+
+      if (res.ok) {
+        setStatus((s) => ({ ...s, [id]: 'Saved!' }))
+        setInputs((i) => ({ ...i, [id]: '' }))
+        const updated = await fetch('/api/providers').then((r) => r.json())
+        setStored(updated)
+      } else {
+        setStatus((s) => ({ ...s, [id]: json.error || `Error (HTTP ${res.status})` }))
+      }
+    } catch (err) {
+      setStatus((s) => ({ ...s, [id]: err instanceof Error ? err.message : 'Network error' }))
+    } finally {
+      setSaving(null)
     }
-    setTimeout(() => setStatus((s) => ({ ...s, [id]: '' })), 3000)
+    setTimeout(() => setStatus((s) => ({ ...s, [id]: '' })), 4000)
   }
 
   async function removeKey(id: ProviderID) {
