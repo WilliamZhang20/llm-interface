@@ -131,16 +131,15 @@ export async function POST(request: Request) {
 
           if (producedHere) {
             // Tokens already streamed — keep them, don't restart elsewhere
-            send({ error: `${provider.name} failed mid-response: ${msg}` })
             usedModel = modelLabel
             break
           }
 
           const next = candidates[i + 1]
           if (next) {
-            send({ notice: `${provider.name} unavailable (${msg}). Falling back to ${next.provider.name}…` })
+            send({ notice: `Falling back to ${next.provider.name}…` })
           } else {
-            send({ error: `${provider.name} failed: ${msg}. No more providers to try.` })
+            send({ error: 'All providers are unavailable right now. Please try again in a moment.' })
           }
         }
       }

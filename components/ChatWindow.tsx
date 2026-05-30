@@ -210,8 +210,8 @@ export default function ChatWindow({ conversationId }: Props) {
             />
           ))}
           {notices.map((n, i) => (
-            <p key={i} className="text-xs text-amber-600 dark:text-amber-400 text-center">
-              ⚠ {n}
+            <p key={i} className="text-xs text-zinc-400 dark:text-zinc-500 text-center italic">
+              {n}
             </p>
           ))}
           {error && (

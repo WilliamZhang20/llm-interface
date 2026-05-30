@@ -1,3 +1,6 @@
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+
 interface Props {
   role: 'user' | 'assistant' | 'summary'
   content: string
@@ -25,13 +28,19 @@ export default function MessageBubble({ role, content, modelUsed, streaming }: P
   return (
     <div className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words ${
+        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed break-words ${
           isUser
-            ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-br-sm'
+            ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 rounded-br-sm whitespace-pre-wrap'
             : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 rounded-bl-sm'
         }`}
       >
-        {content}
+        {isUser ? (
+          content
+        ) : (
+          <div className="markdown-body">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+          </div>
+        )}
         {streaming && (
           <span className="ml-1 inline-block h-3 w-0.5 animate-pulse bg-current opacity-70" />
         )}
